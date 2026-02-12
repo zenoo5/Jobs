@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الوظائف المتاحة</title>
+
+<style>
+body{
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    margin:0;
+    background:#f5f7f9;
+    color:#1a1a1a;
+}
+
+/* HEADER */
+header{
+    padding:18px;
+    background:#145c46;
+    color:white;
+    text-align:center;
+    font-size:24px;
+    font-weight:600;
+}
+
+/* FILTERS */
+.controls{
+    padding:15px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:center;
+    background:white;
+    border-bottom:1px solid #ddd;
+}
+
+input, select{
+    padding:10px 14px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:14px;
+}
+
+/* CARDS */
+.cards{
+    display:grid;
+    grid-template-columns: repeat(auto-fill,minmax(260px,1fr));
+    gap:22px;
+    padding:25px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:14px;
+    box-shadow:0 6px 16px rgba(0,0,0,0.07);
+    cursor:pointer;
+    transition:.25s;
+    text-align:right;
+}
+
+.card:hover{
+    transform:translateY(-6px);
+}
+
+.card h3{
+    margin:0 0 8px;
+    font-size:18px;
+}
+
+.tag{
+    font-size:13px;
+    opacity:.7;
+    margin-bottom:4px;
+}
+
+/* MODAL */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+.modal-content{
+    background:white;
+    max-width:720px;
+    width:100%;
+    border-radius:14px;
+    padding:25px;
+    overflow:auto;
+    max-height:90vh;
+    text-align:right;
+    line-height:1.8;
+}
+
+.close{
+    float:left;
+    cursor:pointer;
+    font-size:16px;
+    background:#e2e2e2;
+    padding:6px 12px;
+    border-radius:6px;
+}
+/* DETAILS SECTIONS */
+
+.section{
+    margin-top:18px;
+    padding-top:12px;
+    border-top:1px solid #e5e5e5;
+}
+
+.section-title{
+    color:#145c46;
+    font-weight:700;
+    margin-bottom:6px;
+}
+
+.label{
+    color:#145c46;
+    font-weight:600;
+}
+
+.value{
+    color:#333;
+}
+</style>
+</head>
+
+<body>
+
+<header>الوظائف المتاحة</header>
+
+<div class="controls">
+    <input id="search" placeholder="بحث عن وظيفة..." />
+    <select id="categoryFilter">
+        <option value="">كل الفئات</option>
+    </select>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<div class="modal" id="modal">
+    <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+let jobs = [];
+
+/* LOAD JSON DATA */
+fetch("jobs.json")
+  .then(response => response.json())
+  .then(data => {
+      jobs = data;
+      fillCategories();
+      renderJobs();
+  });
+
+function fillCategories(){
+    const categories = [...new Set(jobs.map(j => j.category))];
+    const select = document.getElementById("categoryFilter");
+
+    categories.forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+    });
+}
+
+function renderJobs(){
+    const search = document.getElementById("search").value.toLowerCase();
+    const category = document.getElementById("categoryFilter").value;
+    const container = document.getElementById("cards");
+
+    container.innerHTML = "";
+
+    jobs
+      .filter(j => !category || j.category === category)
+      .filter(j => (j.title || "").toLowerCase().includes(search))
+      .forEach(job => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <h3>${job.title}</h3>
+            <div class="tag">${job.category}</div>
+            <div class="tag">${job.degree}</div>
+          `;
+          card.onclick = () => showDetails(job);
+          container.appendChild(card);
+      });
+}
+
+document.getElementById("search").addEventListener("input", renderJobs);
+document.getElementById("categoryFilter").addEventListener("change", renderJobs);
+
+function showDetails(job){
+    const modal = document.getElementById("modal");
+    const content = document.getElementById("modalContent");
+
+    // Helper → converts newline text into bullet list
+    const toList = (text) => {
+        if(!text) return "";
+        return "<ul>" + text
+            .split("\n")
+            .map(item => `<li>${item.trim()}</li>`)
+            .join("") + "</ul>";
+    };
+
+    content.innerHTML = `
+      <div class="close" onclick="closeModal()">X</div>
+      <h2 style="margin-bottom:10px">${job.title}</h2>
+
+      <div class="section">
+          <div><span class="label">الفئة:</span> <span class="value">${job.category}</span></div>
+          <div><span class="label">المؤهل:</span> <span class="value">${job.degree}</span></div>
+          <div><span class="label">التخصص:</span> <span class="value">${job.major}</span></div>
+          <div><span class="label">التخصص الدقيق:</span> <span class="value">${job.specialty}</span></div>
+      </div>
+
+      <div class="section">
+          <div class="section-title">المهام الوظيفية</div>
+          ${toList(job.tasks)}
+      </div>
+
+      <div class="section">
+          <div class="section-title">المهارات المطلوبة</div>
+          ${toList(job.skills)}
+      </div>
+
+      <div class="section">
+          <div><span class="label">العمر:</span> <span class="value">${job.age}</span></div>
+          <div><span class="label">الجنس:</span> <span class="value">${job.gender}</span></div>
+          <div><span class="label">الخبرة:</span> <span class="value">${job.experience}</span></div>
+      </div>
+    `;
+
+    modal.style.display = "flex";
+}
+
+function closeModal(){
+    document.getElementById("modal").style.display = "none";
+}
+
+document.getElementById("modal").onclick = e => {
+    if(e.target.id === "modal") closeModal();
+};
+</script>
+
+</body>
+</html>
