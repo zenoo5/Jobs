@@ -127,6 +127,18 @@ input, select{
 .value{
     color:#333;
 }
+.click-hint{
+    position:absolute;
+    bottom:12px;
+    left:14px;
+    font-size:12px;
+    color:#145c46;
+    font-weight:600;
+}
+
+.card{
+    position:relative;
+}
 </style>
 </head>
 
@@ -186,9 +198,17 @@ function renderJobs(){
           card.className = "card";
           card.innerHTML = `
             <h3>${job.title}</h3>
-            <div class="tag">${job.category}</div>
-            <div class="tag">${job.degree}</div>
-          `;
+
+            <div class="tag">
+                <strong>الفئة:</strong> ${job.category}
+            </div>
+
+            <div class="tag">
+                <strong>المؤهل المطلوب:</strong> ${job.degree}
+            </div>
+
+            <div class="click-hint">إضغط للتفاصيل</div>
+        `;      
           card.onclick = () => showDetails(job);
           container.appendChild(card);
       });
